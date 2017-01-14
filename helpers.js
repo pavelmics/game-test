@@ -30,5 +30,9 @@ TimeHelper = {
         var currentTime = Date.now();
         callback();
         return Date.now() - currentTime;
+    },
+    sleep: function(ms) {
+        var start = Date.now();
+        while (Date.now() < start + ms) { }
     }
 };
