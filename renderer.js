@@ -8,6 +8,7 @@ function TileMap(width, height) { // todo: IRenderable
     this.height = height;
     this.map = [];
     this._tileByTypeHash = {};
+    this.needRender = this._generateNeedRenderMap(true);
 }
 
 TileMap.TILE_TYPE_EMPTY = 'empty';
@@ -23,6 +24,14 @@ TileMap.prototype = {
         return this.height;
     },
 
+    isTileNeedRender: function(x, y) {
+      return true;
+    },
+
+    clearNeedRender: function () {
+      this.needRender = this._generateNeedRenderMap(false);
+    },
+
     getTileByCoordinate: function(x, y) {
         var index = this._getTileIndex(x, y);
         return this.map[index];
@@ -30,6 +39,7 @@ TileMap.prototype = {
 
     replaceObject: function(tileX, tileY, tileType) {
         var index = this._getTileIndex(tileX, tileY);
+        this.needRender[tileX][tileY] = true;
         this.map[index] = this.getTileByType(tileType);
     },
 
@@ -79,6 +89,18 @@ TileMap.prototype = {
         for (var i = 0; i !== tilesCount; i++) {
             this.map[i] = this.getTileByType(TileMap.TILE_TYPE_EMPTY);
         }
+    },
+
+    _generateNeedRenderMap: function(value) {
+        var needRenderMap = {};
+        for (var i = 0; i !== this.width; i++) {
+            needRenderMap[i] = {};
+            for(var j = 0; j !== this.height; j++) {
+                needRenderMap[i][j] = value;
+            }
+        }
+
+        return needRenderMap;
     }
 };
 
@@ -99,6 +121,8 @@ function Renderer(canvas2d, rendarableObject, widthInPx, heightInPx) {
     // ширина и высота одного тайла
     this.tileWidthPx  = this.canvasWidthPx / this.tileCountWidth;
     this.tileHeightPx = this.canvasHeightPx / this.tileCountHeight;
+
+    this.prevRenderableObjectState = null;
 }
 Renderer.prototype = {
     /**
@@ -110,25 +134,30 @@ Renderer.prototype = {
         var pixelOffsetX = 0;
         var pixelOffsetY = 0;
         var tile;
+        var prevTile;
 
         for (var y = 0; y !== this.tileCountHeight; y++) {  // строки тайлов
             for (var x = 0; x !== this.tileCountWidth; x++) { // ячейки тайлов
                 //console.log(x + ', ' + y);
-                tile = this.renderedObject.getTileByCoordinate(x, y);
-                tile.draw(
-                    this.canvas2d,
-                    tile,
-                    pixelOffsetX,
-                    pixelOffsetY,
-                    this.tileWidthPx,
-                    this.tileHeightPx,
-                    realGameTime
-                );
-                pixelOffsetX = pixelOffsetX + this.tileWidthPx;
+                if (this.renderedObject.isTileNeedRender(x, y)) {
+                    tile = this.renderedObject.getTileByCoordinate(x, y);
+                    tile.draw(
+                        this.canvas2d,
+                        tile,
+                        pixelOffsetX,
+                        pixelOffsetY,
+                        this.tileWidthPx,
+                        this.tileHeightPx,
+                        realGameTime
+                    );
+                    pixelOffsetX = pixelOffsetX + this.tileWidthPx;
+                }
             }
 
             pixelOffsetY = pixelOffsetY + this.tileHeightPx;
             pixelOffsetX = 0;
         }
+
+        this.renderedObject.clearNeedRender();
     },
 };
