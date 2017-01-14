@@ -1,3 +1,8 @@
+/**
+ * This file contains the helpers object. Hire must be only objects with static methods (like static facade).
+ * If you write hire some classes, you possible went wrong somewhere
+ */
+
 MathHelper = {
 
     /**
@@ -34,5 +39,37 @@ TimeHelper = {
     sleep: function(ms) {
         var start = Date.now();
         while (Date.now() < start + ms) { }
+    },
+    createInterval: function(intervalMs, startTime, callback) {
+        return function(gameTime) {
+            if ((gameTime - startTime) >= intervalMs) {
+                startTime = gameTime;
+                callback();
+            }
+        }
+    }
+};
+
+OOPHelper = {
+    mustBeOverloaded: function() {
+        throw "The function must be overloaded!";
+    }
+};
+
+ObjectHelper = {
+
+    /**
+     * Simple extend function
+     * @param obj1
+     * @param obj2
+     */
+    extend: function(obj1, obj2) {
+        for (var i in obj2) {
+            if (obj2.hasOwnProperty(i)) {
+                obj1[i] = obj2[i];
+            }
+        }
+
+        return obj1;
     }
 };

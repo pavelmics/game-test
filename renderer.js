@@ -12,6 +12,7 @@ function TileMap(width, height) { // todo: IRenderable
 
 TileMap.TILE_TYPE_EMPTY = 'empty';
 TileMap.TILE_TYPE_RED   = 'red';
+TileMap.TILE_TYPE_BLINK = 'blink';
 
 TileMap.prototype = {
     getWidth: function() {
@@ -47,7 +48,7 @@ TileMap.prototype = {
 
     getTileByType: function(tileType) {
         var tile;
-        if ('object' === this._tileByTypeHash[tileType]) {
+        if ('object' === typeof this._tileByTypeHash[tileType]) {
             return this._tileByTypeHash[tileType];
         }
 
@@ -55,6 +56,12 @@ TileMap.prototype = {
             tile = new EmptyTile();
         } else if (tileType === TileMap.TILE_TYPE_RED) {
             tile = new RedTile();
+        } else if (tileType === TileMap.TILE_TYPE_BLINK) {
+            tile = new BlinkTile(
+                {r: 255, b: 255, g: 255},
+                {r: 50, b: 50, g: 50},
+                100
+            );
         } else {
             throw "That tile type undeclared!";
         }
@@ -96,8 +103,10 @@ function Renderer(canvas2d, rendarableObject, widthInPx, heightInPx) {
 Renderer.prototype = {
     /**
      * Renders the game field
+     * @param {int} realGameTime milliseconds from start
      */
-    render: function() {
+    render: function(realGameTime) {
+        //console.log(realGameTime);
         var pixelOffsetX = 0;
         var pixelOffsetY = 0;
         var tile;
@@ -106,12 +115,14 @@ Renderer.prototype = {
             for (var x = 0; x !== this.tileCountWidth; x++) { // ячейки тайлов
                 //console.log(x + ', ' + y);
                 tile = this.renderedObject.getTileByCoordinate(x, y);
-                this._drawRectangle(
+                tile.draw(
+                    this.canvas2d,
+                    tile,
                     pixelOffsetX,
                     pixelOffsetY,
                     this.tileWidthPx,
                     this.tileHeightPx,
-                    tile.getColor()
+                    realGameTime
                 );
                 pixelOffsetX = pixelOffsetX + this.tileWidthPx;
             }
@@ -120,81 +131,4 @@ Renderer.prototype = {
             pixelOffsetX = 0;
         }
     },
-
-    _drawRectangle: function(x, y, w, h, color) {
-        this.canvas2d.beginPath();
-        this.canvas2d.rect(x, y, w, h);
-        if ('string' === typeof color) {
-            this.canvas2d.fillStyle = color;
-            this.canvas2d.fill();
-        }
-    },
-
-    /**
-     * Generates empty map
-     */
-    /*generateEmptyMap: function() {
-        var tilesCount = this.tileCountHeight * this.tileCountWidth;
-        for (var i = 0; i !== tilesCount; i++) {
-            this.map[i] = new EmptyTile();
-        }
-    },*/
-
-    /*replaceObject: function(tileX, tileY, objectDefinition) {
-        var index = this.getTileIndex(tileX, tileY);
-        this.map[index] = new Tile();
-    },*/
-
-    /**
-     * Считает по координатам тайла его индекс в массиве map
-     * @param tileX
-     * @param tileY
-     */
-    /*getTileIndex: function(tileX, tileY) {
-        var index = (tileX * this.tileCountWidth) + tileY;
-        if (!this.map[index]) {
-            throw 'Out of game field exception!';
-        }
-        return index;
-    }*/
 };
-
-/**
- * @constructor
- */
-function Tile() {
-    this.color = MathHelper.randInt(0, 1);
-
-    // ширина и высота одного тайла
-    this.WIDTH  = 32;
-    this.HEIGHT = 32;
-}
-Tile.prototype = {
-    getWidth: function () {
-        return this.WIDTH;
-    },
-    getHeight: function() {
-        return this.HEIGHT;
-    },
-    getColor: function() {
-        return this.color ? 'red' : 'black';
-    }
-};
-
-/**
- * @constructor
- */
-function EmptyTile() {
-    Tile.apply(this);
-    this.color = 0;
-}
-EmptyTile.prototype = Object.create(Tile.prototype);
-
-/**
- * @constructor
- */
-function RedTile() {
-    Tile.apply(this);
-    this.color = 1;
-}
-RedTile.prototype = Object.create(Tile.prototype);
